@@ -213,7 +213,7 @@ class TelegramCollector {
     if (this.stickerPublisher) {
       this.stickerPublisher.stop()
     }
-    this.bot.stop('SIGTERM')
+    this.bot.stop()
     await this.redis.quit()
     if (this.tdlibRedis) await this.tdlibRedis.quit()
     logWithTimestamp('Collector stopped')
