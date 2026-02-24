@@ -342,14 +342,6 @@ module.exports = async (ctx, next) => {
 
   ctx.replyWithChatAction('choose_sticker')
 
-  // Send Gramads ad for Russian locale users in private chats only (non-blocking)
-  if (ctx.chat.type === 'private' && ctx.from && (ctx.from.language_code === 'ru' || (ctx.session && ctx.session.userInfo && ctx.session.userInfo.settings && ctx.session.userInfo.settings.locale === 'ru'))) {
-    // Send ad asynchronously without blocking quote generation
-    sendGramadsAd(ctx.from.id).catch(() => {
-      // Silently handle any errors - don't interrupt quote generation
-    })
-  }
-
   // set background color
   let backgroundColor
 
@@ -460,6 +452,16 @@ module.exports = async (ctx, next) => {
   }
 
   messages = messages.filter((message) => message && Object.keys(message).length !== 0)
+
+  // Filter out messages sent by this bot (e.g. Gramads ads that may arrive during collection)
+  if (ctx.me) {
+    messages = messages.filter((message) => !(message.from && message.from.is_bot && message.from.username === ctx.me))
+  }
+
+  // Send Gramads ad after messages are collected to prevent ads from being included in quotes
+  if (ctx.chat.type === 'private' && ctx.from && (ctx.from.language_code === 'ru' || (ctx.session && ctx.session.userInfo && ctx.session.userInfo.settings && ctx.session.userInfo.settings.locale === 'ru'))) {
+    sendGramadsAd(ctx.from.id).catch(() => {})
+  }
 
   if (ctx.message.quote && messages[0]) {
     messages[0].quote = ctx.message.quote
